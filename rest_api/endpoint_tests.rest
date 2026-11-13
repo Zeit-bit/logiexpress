@@ -1,4 +1,62 @@
 @host = http://localhost:3000
+@clientId = 1
+@addressId = 1
+@storageId = 1
+@shipmentId = {{createShipment.response.body.$.id_shipment}}
 
 ### Check API Status
 GET {{host}}/api/status
+
+### 1. Create a shipment (201, state REGISTERED)
+# @name createShipment
+POST {{host}}/api/shipments
+Content-Type: application/json
+
+{
+  "id_address": {{addressId}},
+  "id_client": {{clientId}},
+  "sender_name": "Carlos Ramirez",
+  "recipient_name": "Pedro Sanchez",
+  "cost": "300.00"
+}
+
+### 2. Add a package to storage (201; 400 if storage is full)
+# Seeded storage 1 has 3 of 4 spaces occupied, so the first run fills it.
+# Repeating this request then returns 400 with sqlState 45000
+# and message "Storage capacity exceeded".
+POST {{host}}/api/storages/{{storageId}}/packages
+Content-Type: application/json
+
+{
+  "id_shipment": {{shipmentId}},
+  "weight": "2.50",
+  "dimensions": "30x20x15 cm",
+  "content": "Electronic accessories"
+}
+
+### 3. Update shipment cost (200; creates a Shipment_Audit row)
+PUT {{host}}/api/shipments/{{shipmentId}}/cost
+Content-Type: application/json
+
+{
+  "cost": "350.00",
+  "user": "Molina"
+}
+
+### 4. Add tracking history (201; updates Shipment.state to IN_TRANSIT)
+POST {{host}}/api/shipments/{{shipmentId}}/tracking
+Content-Type: application/json
+
+{
+  "location": "Monterrey",
+  "state": "IN_TRANSIT",
+  "comments": "Package dispatched from the distribution center"
+}
+
+### 5. List shipments with clients and packages (200)
+# The created shipment should have cost 350.00 and state IN_TRANSIT.
+GET {{host}}/api/shipments/
+
+### 6. List client shipments with tracking history (200)
+# The created shipment should include the tracking entry from request 4.
+GET {{host}}/api/clients/{{clientId}}/shipments
