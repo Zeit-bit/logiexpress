@@ -1,0 +1,96 @@
+Table Client {
+  id_client int [pk, increment, not null] // PK
+  name varchar [not null]
+  state varchar [not null, check: `state in [ACTIVE, INACTIVE]`]
+  credit_limit decimal [not null]
+}
+
+Table Address {
+  id_address int [pk, increment, not null] // PK
+  id_client int [not null] // FK
+  origin_address varchar [not null]
+  destiny_address varchar [not null]
+}
+
+Table Shipment {
+  id_shipment int [pk, increment, not null] // Pk
+  id_address int [not null] // FK
+  id_client int [not null] // FK
+  sender_name varchar [not null]
+  recipient_name varchar [not null]
+  cost decimal [not null] // AFTER UPDATE trigger that adds a row to Shipment_Audit table (tr_shipment_audit)
+  date timestamp [not null]
+  state varchar [not null, check: `state in [REGISTERED, IN_TRANSIT, DELIVERED, CANCELLED]`]
+}
+
+Table Package {
+  id_package int [pk, increment, not null] // PK
+  id_shipment int [not null] // FK
+  id_storage int [not null] // FK, BEFORE INSERT trigger that validates capacity in storage, if invalid "SIGNAL SQLSTATE '4500'" (tr_validate_storage_capacity)
+  weight decimal [not null]
+  dimensions varchar [not null]
+  content varchar [not null]
+}
+
+Table Storage {
+  id_storage int [pk, increment, not null] // PK
+  name varchar [not null]
+  location varchar [not null]
+  capacity int [not null]
+}
+
+Table Tracking_History {
+  id_tracking_history int [pk, increment, not null] // PK
+  id_shipment int [not null] // FK
+  date timestamp [not null]
+  location varchar [not null]
+  state varchar [not null, check: `state in [REGISTERED, IN_TRANSIT, DELIVERED, CANCELLED]`] // AFTER INSERT, triggger update on Shipment.state (tr_link_shipment_state)
+  comments varchar [not null]
+}
+
+Table Shipment_Audit {
+  id_shipment_audit int [pk, increment, not null] // PK
+  id_shipment int [not null] // FK
+  previous_cost decimal [not null]
+  new_cost decimal [not null]
+  user varchar [not null]
+  date timestamp [not null]
+}
+
+Ref: Address.id_client > Client.id_client
+Ref: Shipment.id_client > Client.id_client
+Ref: Shipment.id_shipment < Package.id_shipment
+Ref: Package.id_storage > Storage.id_storage
+Ref: Tracking_History.id_shipment > Shipment.id_shipment
+Ref: Shipment.id_address > Address.id_address
+Ref: Shipment.id_shipment < Shipment_Audit.id_shipment
+
+/*
+sp_client_monthly_report(id_client, month, year)
+return total_billing, delivered_shipments, avg_delivery_time
+
+sp_get_shipment_route_sheet(id_shipment)
+return Package p, sender_name, recipient_name, Tracking_History t
+(id_shipment, p.weight, p.dimensions, p.content, sender_name, recipient_name, t.date, t.location, t.state, t.comments)
+*/
+
+/*
+[FLOW]:
+1. Insert a Storage
+2. Insert a Client
+3. Insert client Address
+4. Client goes to nearest storage
+5. Client inserts a Package to Storage
+6. Client inserts a Shipment with Package and an Address, initial Shipment.state REGISTERED
+7. A user (varchar name) updates Shipment.cost and triggers Shipment_Audit
+7. Shipment starts moving, Insert Tracking_History
+8. ForEach Tracking_History insert, Update Shipment.state to Tracking_History.state
+
+[API-ENDPOINTS]:
+POST /api/storages/:id/packages (HTTP 400 Bad Request and "SIGNAL SQLSTATE '4500'" in body if trigger active)
+POST /api/shipments
+PUT /api/shipments/:id/cost
+POST /api/shipments/:id/tracking
+GET /api/shipments/ (shipments linked with clients and packages)
+GET /api/clients/:id/shipments (Shipment by id_client linked with Tracking_History of each shipment.id)
+*/

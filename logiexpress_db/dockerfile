@@ -1,0 +1,5 @@
+FROM mysql:8.0
+COPY sql/01_Databasae_Tables_Creation.sql /docker-entrypoint-initdb.d/01_Databasae_Tables_Creation.sql
+COPY sql/02_Triggers.sql /docker-entrypoint-initdb.d/02_Triggers.sql
+COPY sql/03_Inserts.sql /docker-entrypoint-initdb.d/03_Inserts.sql
+COPY sql/04_Stored_Procedures.sql /docker-entrypoint-initdb.d/04_Stored_Procedures.sql
