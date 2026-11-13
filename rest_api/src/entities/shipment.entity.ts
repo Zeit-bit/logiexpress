@@ -28,7 +28,7 @@ export class Shipment {
   @Column({ type: 'decimal', precision: 12, scale: 2 })
   cost!: string;
 
-  @Column({ type: 'timestamp' })
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   date!: Date;
 
   @Column({ type: 'varchar', length: 12 })

@@ -12,7 +12,7 @@ export class TrackingHistory {
   @Column({ type: 'int' })
   id_shipment!: number;
 
-  @Column({ type: 'timestamp' })
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   date!: Date;
 
   @Column({ type: 'varchar', length: 255 })

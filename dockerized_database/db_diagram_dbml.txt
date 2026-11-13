@@ -80,15 +80,15 @@ return Package p, sender_name, recipient_name, Tracking_History t
 2. Insert a Client
 3. Insert client Address
 4. Client goes to nearest storage
-5. Client inserts a Package to Storage
-6. Client inserts a Shipment with Package and an Address, initial Shipment.state REGISTERED
+5. Client inserts a Shipment an Address, initial Shipment.state REGISTERED
+6. Client inserts a Package to Storage and links it to the Shipment created
 7. A user (varchar name) updates Shipment.cost and triggers Shipment_Audit
 7. Shipment starts moving, Insert Tracking_History
 8. ForEach Tracking_History insert, Update Shipment.state to Tracking_History.state
 
 [API-ENDPOINTS]:
-POST /api/storages/:id/packages (HTTP 400 Bad Request and "SIGNAL SQLSTATE '4500'" in body if trigger active)
 POST /api/shipments
+POST /api/storages/:id/packages (HTTP 400 Bad Request and "SIGNAL SQLSTATE '4500'" in body if trigger active)
 PUT /api/shipments/:id/cost
 POST /api/shipments/:id/tracking
 GET /api/shipments/ (shipments linked with clients and packages)
