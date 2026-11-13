@@ -2,6 +2,7 @@ USE logiexpress_db;
 DELIMITER $$
 
 CREATE TRIGGER tr_validate_storage_capacity BEFORE INSERT ON Package
+FOR EACH ROW
 BEGIN
  DECLARE storage_capacity INT;
  DECLARE package_count INT;
@@ -18,6 +19,7 @@ BEGIN
 END$$
 
 CREATE TRIGGER tr_shipment_audit AFTER UPDATE ON Shipment
+FOR EACH ROW
 BEGIN
  IF OLD.cost <> NEW.cost THEN
   INSERT INTO Shipment_Audit (id_shipment, previous_cost, new_cost, user)
@@ -26,6 +28,7 @@ BEGIN
 END$$
 
 CREATE TRIGGER tr_link_shipment_state AFTER INSERT ON Tracking_History
+FOR EACH ROW
 BEGIN
  UPDATE Shipment SET state = NEW.state
  WHERE id_shipment = NEW.id_shipment;
